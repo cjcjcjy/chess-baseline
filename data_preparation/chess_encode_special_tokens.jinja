@@ -1,0 +1,64 @@
+{%- set board_squares = ['a1', 'b1', 'c1', 'd1', 'e1', 'f1', 'g1', 'h1',
+                          'a2', 'b2', 'c2', 'd2', 'e2', 'f2', 'g2', 'h2',
+                          'a3', 'b3', 'c3', 'd3', 'e3', 'f3', 'g3', 'h3',
+                          'a4', 'b4', 'c4', 'd4', 'e4', 'f4', 'g4', 'h4',
+                          'a5', 'b5', 'c5', 'd5', 'e5', 'f5', 'g5', 'h5',
+                          'a6', 'b6', 'c6', 'd6', 'e6', 'f6', 'g6', 'h6',
+                          'a7', 'b7', 'c7', 'd7', 'e7', 'f7', 'g7', 'h7',
+                          'a8', 'b8', 'c8', 'd8', 'e8', 'f8', 'g8', 'h8'] -%}
+
+{%- set piece_map = {
+    'P': '<White_Pawn>', 'N': '<White_Knight>', 'B': '<White_Bishop>',
+    'R': '<White_Rook>', 'Q': '<White_Queen>', 'K': '<White_King>',
+    'p': '<Black_Pawn>', 'n': '<Black_Knight>', 'b': '<Black_Bishop>',
+    'r': '<Black_Rook>', 'q': '<Black_Queen>', 'k': '<Black_King>'
+} -%}
+
+{%- set fen_parts = FEN.split() -%}
+{%- set board_fen = fen_parts[0] -%}
+{%- set turn = fen_parts[1] -%}
+{%- set castling = fen_parts[2] -%}
+{%- set en_passant = fen_parts[3] -%}
+{%- set halfmove = fen_parts[4] -%}
+{%- set fullmove = fen_parts[5] -%}
+
+{%- set ranks = board_fen.split('/') | reverse | list -%}
+{%- set board_array = [] -%}
+
+{%- for rank in ranks -%}
+    {%- for char in rank -%}
+        {%- if char in '12345678' -%}
+            {%- for i in range(char | int) -%}
+                {%- set _ = board_array.append('<blank>') -%}
+            {%- endfor -%}
+        {%- else -%}
+            {%- set _ = board_array.append(piece_map[char]) -%}
+        {%- endif -%}
+    {%- endfor -%}
+{%- endfor -%}
+
+<chess_position>{%- for i in range(64) -%}
+<{{ board_squares[i] }}>{{ board_array[i] }}
+{%- endfor -%}
+|{%- if turn == 'w' -%}White{%- else -%}Black{%- endif -%}|{{ castling }}|{{ en_passant }}|{{ halfmove }}|{{ fullmove }}|
+{%- set legal_moves_list = legal_moves_uci.split() -%}
+{%- set color = 'White' if turn == 'w' else 'Black' -%}
+{%- set encoded_moves = [] -%}
+{%- for move in legal_moves_list -%}
+    {%- set from_sq = move[0:2] -%}
+    {%- set to_sq = move[2:4] -%}
+    {%- set promotion = move[4:5] if move | length > 4 else '' -%}
+    {%- set promo_token = '' -%}
+    {%- if promotion == 'q' -%}
+        {%- set promo_token = '<' + color + '_Queen>' -%}
+    {%- elif promotion == 'r' -%}
+        {%- set promo_token = '<' + color + '_Rook>' -%}
+    {%- elif promotion == 'b' -%}
+        {%- set promo_token = '<' + color + '_Bishop>' -%}
+    {%- elif promotion == 'n' -%}
+        {%- set promo_token = '<' + color + '_Knight>' -%}
+    {%- endif -%}
+    {%- set _ = encoded_moves.append('<' + from_sq + '><' + to_sq + '>' + promo_token) -%}
+{%- endfor -%}
+{{ encoded_moves | join(' ') }}</chess_position>
+Evaluate all legal moves and select the best one.
